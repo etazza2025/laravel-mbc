@@ -109,7 +109,9 @@ class OpenRouterProvider implements MbcProviderInterface
                             'type' => 'function',
                             'function' => [
                                 'name' => $block['name'],
-                                'arguments' => json_encode($block['input'] ?? []),
+                                'arguments' => json_encode(
+                                    ! empty($block['input']) ? $block['input'] : new \stdClass()
+                                ),
                             ],
                         ];
                     }
