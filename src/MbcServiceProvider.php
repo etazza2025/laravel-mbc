@@ -21,6 +21,9 @@ class MbcServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/mbc.php', 'mbc');
 
+        // Register the 'mbc' log channel if not already defined by the host app
+        $this->registerLogChannel();
+
         // Bind the AI provider based on configuration
         $this->app->bind(MbcProviderInterface::class, function () {
             $provider = config('mbc.default_provider', 'anthropic');
@@ -67,6 +70,20 @@ class MbcServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'mbc-migrations');
+    }
+
+    private function registerLogChannel(): void
+    {
+        $channelName = config('mbc.logging.channel', 'mbc');
+
+        if (! $this->app['config']->has("logging.channels.{$channelName}")) {
+            $this->app['config']->set("logging.channels.{$channelName}", [
+                'driver' => 'daily',
+                'path' => storage_path('logs/mbc.log'),
+                'level' => 'debug',
+                'days' => 7,
+            ]);
+        }
     }
 
     private function registerMigrations(): void
