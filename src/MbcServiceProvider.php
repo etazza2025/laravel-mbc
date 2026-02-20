@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Undergrace\Mbc;
 
 use Illuminate\Support\ServiceProvider;
+use Undergrace\Mbc\Console\Commands\CleanupZombieSessionsCommand;
 use Undergrace\Mbc\Console\Commands\MakeMbcToolCommand;
 use Undergrace\Mbc\Console\Commands\ReplayCommand;
 use Undergrace\Mbc\Console\Commands\SessionStatusCommand;
@@ -76,6 +77,7 @@ class MbcServiceProvider extends ServiceProvider
     private function registerCommands(): void
     {
         $this->commands([
+            CleanupZombieSessionsCommand::class,
             MakeMbcToolCommand::class,
             SessionStatusCommand::class,
             ReplayCommand::class,

@@ -121,6 +121,7 @@ class MbcSession
      */
     public function start(string $initialMessage): self
     {
+        $this->guardConcurrency();
         $this->startedAt = new DateTimeImmutable();
         $this->boot();
         $this->persist();
@@ -167,7 +168,10 @@ class MbcSession
             $this->turnCount++;
             $turnStart = microtime(true);
 
-            // 1. Call the AI Provider
+            // 1. Trim messages if approaching context window limit
+            $this->trimMessagesIfNeeded();
+
+            // 2. Call the AI Provider
             $response = $this->provider->complete(
                 system: $this->systemPrompt,
                 messages: $this->messages,
@@ -254,6 +258,60 @@ class MbcSession
         $this->status = SessionStatus::MAX_TURNS;
     }
 
+    // ─── Context Window Management ────────────────────────────────────
+
+    /**
+     * Estimate token count for a message (rough: ~4 chars per token).
+     */
+    private function estimateTokenCount(mixed $content): int
+    {
+        $text = is_string($content) ? $content : json_encode($content);
+
+        return (int) ceil(strlen($text) / 4);
+    }
+
+    /**
+     * Trim old messages when approaching the context window limit.
+     *
+     * Strategy: keep the first message (initial context) and the most recent
+     * messages, dropping middle turns to stay within budget. Tool result pairs
+     * are kept together to avoid orphaned tool_use/tool_result blocks.
+     */
+    private function trimMessagesIfNeeded(): void
+    {
+        $limit = $this->config->contextWindowLimit - $this->config->contextReserveTokens;
+
+        $totalTokens = $this->estimateTokenCount($this->systemPrompt);
+        foreach ($this->messages as $msg) {
+            $totalTokens += $this->estimateTokenCount($msg['content']);
+        }
+
+        if ($totalTokens <= $limit) {
+            return;
+        }
+
+        // Always preserve the first message (user context) and last 6 messages
+        $preserveStart = 1;
+        $preserveEnd = min(6, count($this->messages));
+
+        if (count($this->messages) <= $preserveStart + $preserveEnd) {
+            return;
+        }
+
+        $head = array_slice($this->messages, 0, $preserveStart);
+        $tail = array_slice($this->messages, -$preserveEnd);
+
+        // Build a summary marker so the AI knows history was trimmed
+        $droppedCount = count($this->messages) - $preserveStart - $preserveEnd;
+        $summary = [
+            'role' => 'user',
+            'content' => "[System: {$droppedCount} previous turns were trimmed to fit context window. "
+                       . "The conversation started with the context above and the most recent turns follow.]",
+        ];
+
+        $this->messages = array_values(array_merge($head, [$summary], $tail));
+    }
+
     // ─── Middleware Pipeline ────────────────────────────────────────────
 
     private function runAfterResponseMiddleware(ProviderResponse $response): ProviderResponse
@@ -276,6 +334,30 @@ class MbcSession
         );
 
         return $pipeline($toolResults);
+    }
+
+    // ─── Concurrency Guard ────────────────────────────────────────────
+
+    /**
+     * Check that we haven't exceeded the max concurrent sessions limit.
+     *
+     * @throws \RuntimeException
+     */
+    private function guardConcurrency(): void
+    {
+        $maxConcurrent = (int) config('mbc.limits.max_concurrent_sessions', 10);
+
+        if ($maxConcurrent <= 0) {
+            return;
+        }
+
+        $running = MbcSessionModel::where('status', SessionStatus::RUNNING)->count();
+
+        if ($running >= $maxConcurrent) {
+            throw new \RuntimeException(
+                "MBC concurrency limit reached: {$running}/{$maxConcurrent} sessions are currently running."
+            );
+        }
     }
 
     // ─── Bootstrap ──────────────────────────────────────────────────────
@@ -385,9 +467,11 @@ class MbcSession
 
     private function estimateCost(): float
     {
-        // Claude Sonnet 4 pricing: ~$3/M input, ~$15/M output
-        return ($this->totalInputTokens * 3 / 1_000_000)
-             + ($this->totalOutputTokens * 15 / 1_000_000);
+        return ModelPricing::estimate(
+            $this->config->model,
+            $this->totalInputTokens,
+            $this->totalOutputTokens,
+        );
     }
 
     // ─── Accessors ──────────────────────────────────────────────────────

@@ -14,6 +14,8 @@ final readonly class MbcConfig
         public int $timeoutSeconds = 120,
         public int $retryTimes = 3,
         public int $retrySleepMs = 1000,
+        public int $contextWindowLimit = 150_000,
+        public int $contextReserveTokens = 20_000,
     ) {}
 
     public static function fromArray(array $data): self
@@ -26,6 +28,8 @@ final readonly class MbcConfig
             timeoutSeconds: $data['timeout_seconds'] ?? 120,
             retryTimes: $data['retry_times'] ?? 3,
             retrySleepMs: $data['retry_sleep_ms'] ?? 1000,
+            contextWindowLimit: $data['context_window_limit'] ?? 150_000,
+            contextReserveTokens: $data['context_reserve_tokens'] ?? 20_000,
         );
     }
 
@@ -39,6 +43,8 @@ final readonly class MbcConfig
             'timeout_seconds' => $this->timeoutSeconds,
             'retry_times' => $this->retryTimes,
             'retry_sleep_ms' => $this->retrySleepMs,
+            'context_window_limit' => $this->contextWindowLimit,
+            'context_reserve_tokens' => $this->contextReserveTokens,
         ];
     }
 }
