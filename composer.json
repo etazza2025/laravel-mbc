@@ -1,0 +1,58 @@
+{
+    "name": "undergrace/laravel-mbc",
+    "description": "Model Backend Controller - AI agent orchestration protocol for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "UNDERGRACE LABS"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/container": "^12.0",
+        "illuminate/contracts": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/http": "^12.0",
+        "illuminate/queue": "^12.0",
+        "illuminate/support": "^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "mockery/mockery": "^1.6"
+    },
+    "suggest": {
+        "spatie/browsershot": "Required for visual feedback feature (^4.0)",
+        "laravel/horizon": "Recommended for background session processing"
+    },
+    "autoload": {
+        "psr-4": {
+            "Undergrace\\Mbc\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Undergrace\\Mbc\\MbcServiceProvider"
+            ],
+            "aliases": {
+                "Mbc": "Undergrace\\Mbc\\Facades\\Mbc"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

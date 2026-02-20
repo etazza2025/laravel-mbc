@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Undergrace\Mbc\Tools\Attributes\Tool;
+use Undergrace\Mbc\Tools\Attributes\ToolParam;
+use Undergrace\Mbc\Tools\BaseTool;
+
+#[Tool(
+    name: '{{ toolName }}',
+    description: '{{ description }}'
+)]
+class {{ class }} extends BaseTool
+{
+    public function __construct(
+        // Inject your dependencies here
+    ) {}
+
+    #[ToolParam(name: 'input', type: 'string', description: 'Input parameter', required: true)]
+    public function execute(array $input): mixed
+    {
+        // Implement your tool logic here
+
+        return [
+            'result' => 'Tool executed successfully',
+        ];
+    }
+}
