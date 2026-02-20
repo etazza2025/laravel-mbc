@@ -24,6 +24,21 @@ final readonly class ToolCall
         );
     }
 
+    /**
+     * Create from an OpenAI-compatible tool_calls block.
+     * Works with OpenAI, OpenRouter, and other OpenAI-compatible APIs.
+     */
+    public static function fromOpenAiBlock(array $block): self
+    {
+        $function = $block['function'] ?? [];
+
+        return new self(
+            id: $block['id'],
+            name: $function['name'] ?? '',
+            input: json_decode($function['arguments'] ?? '{}', true) ?: [],
+        );
+    }
+
     public function toArray(): array
     {
         return [

@@ -14,19 +14,26 @@ use Undergrace\Mbc\DTOs\ToolDefinition;
 use Undergrace\Mbc\Enums\StopReason;
 
 /**
- * OpenAI Provider — GPT-4o, o1, o3 and other OpenAI models.
+ * OpenRouter Provider — Access 200+ models via a single API.
  *
- * @see https://platform.openai.com/docs/api-reference/chat
+ * Supports: Claude, GPT-4o, Gemini, Llama, Mistral, DeepSeek, and more.
+ * Uses the OpenAI-compatible chat completions format.
+ *
+ * @see https://openrouter.ai/docs
  */
-class OpenAIProvider implements MbcProviderInterface
+class OpenRouterProvider implements MbcProviderInterface
 {
     private readonly string $apiKey;
     private readonly string $baseUrl;
+    private readonly ?string $siteUrl;
+    private readonly ?string $siteName;
 
     public function __construct()
     {
-        $this->apiKey = config('mbc.providers.openai.api_key');
-        $this->baseUrl = config('mbc.providers.openai.base_url', 'https://api.openai.com/v1');
+        $this->apiKey = config('mbc.providers.openrouter.api_key');
+        $this->baseUrl = config('mbc.providers.openrouter.base_url', 'https://openrouter.ai/api/v1');
+        $this->siteUrl = config('mbc.providers.openrouter.site_url');
+        $this->siteName = config('mbc.providers.openrouter.site_name');
     }
 
     public function complete(
@@ -58,14 +65,12 @@ class OpenAIProvider implements MbcProviderInterface
     }
 
     /**
-     * Convert MBC messages to OpenAI format.
-     * Injects system prompt as first message and converts tool_result blocks.
+     * Convert MBC messages to OpenAI-compatible format.
      */
     private function buildMessages(string $system, array $messages): array
     {
         $openAiMessages = [];
 
-        // System prompt as first message
         if ($system !== '') {
             $openAiMessages[] = [
                 'role' => 'system',
@@ -111,12 +116,7 @@ class OpenAIProvider implements MbcProviderInterface
                 }
 
                 $msg = ['role' => 'assistant'];
-
-                if (! empty($textParts)) {
-                    $msg['content'] = implode("\n", $textParts);
-                } else {
-                    $msg['content'] = null;
-                }
+                $msg['content'] = ! empty($textParts) ? implode("\n", $textParts) : null;
 
                 if (! empty($toolCalls)) {
                     $msg['tool_calls'] = $toolCalls;
@@ -127,7 +127,6 @@ class OpenAIProvider implements MbcProviderInterface
                 continue;
             }
 
-            // Regular user/assistant text messages
             $openAiMessages[] = [
                 'role' => $role,
                 'content' => is_string($content) ? $content : json_encode($content),
@@ -138,14 +137,25 @@ class OpenAIProvider implements MbcProviderInterface
     }
 
     /**
-     * Build the HTTP client with OpenAI-specific headers and retry logic.
+     * Build the HTTP client with OpenRouter-specific headers.
      */
     private function client(MbcConfig $config): PendingRequest
     {
-        return Http::withHeaders([
+        $headers = [
             'Authorization' => "Bearer {$this->apiKey}",
             'Content-Type' => 'application/json',
-        ])
+        ];
+
+        // OpenRouter ranking headers (optional, improves rate limits)
+        if ($this->siteUrl) {
+            $headers['HTTP-Referer'] = $this->siteUrl;
+        }
+
+        if ($this->siteName) {
+            $headers['X-Title'] = $this->siteName;
+        }
+
+        return Http::withHeaders($headers)
             ->timeout($config->timeoutSeconds)
             ->retry(
                 $config->retryTimes,
@@ -166,7 +176,7 @@ class OpenAIProvider implements MbcProviderInterface
     }
 
     /**
-     * Parse the raw OpenAI API response into a typed ProviderResponse.
+     * Parse the OpenRouter response into a typed ProviderResponse.
      */
     private function parseResponse(array $response): ProviderResponse
     {
@@ -184,7 +194,6 @@ class OpenAIProvider implements MbcProviderInterface
         $textContent = $message['content'] ?? null;
         $toolCalls = [];
 
-        // Parse tool calls
         foreach ($message['tool_calls'] ?? [] as $tc) {
             $toolCalls[] = ToolCall::fromOpenAiBlock($tc);
         }

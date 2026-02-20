@@ -24,10 +24,34 @@ php artisan migrate
 
 ## Configuration
 
-Add your Anthropic API key to `.env`:
+Add your API keys to `.env` depending on the provider you want to use:
 
+```env
+# Default provider (anthropic, openai, or openrouter)
+MBC_PROVIDER=anthropic
+
+# Anthropic (Claude)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI (GPT-4o, o1, o3)
+OPENAI_API_KEY=sk-...
+
+# OpenRouter (200+ models: Claude, GPT, Gemini, Llama, Mistral, DeepSeek...)
+OPENROUTER_API_KEY=sk-or-...
 ```
-ANTHROPIC_API_KEY=your-api-key-here
+
+## Supported Providers
+
+| Provider | Models | Tool Use | Config Key |
+|----------|--------|----------|------------|
+| **Anthropic** | Claude Sonnet 4.5, Opus, Haiku | Native | `anthropic` |
+| **OpenAI** | GPT-4o, o1, o3 | Native | `openai` |
+| **OpenRouter** | 200+ models from all providers | OpenAI-compatible | `openrouter` |
+
+Set the default provider in `config/mbc.php`:
+
+```php
+'default_provider' => env('MBC_PROVIDER', 'anthropic'),
 ```
 
 ## Quick Start
@@ -47,6 +71,30 @@ $session = Mbc::session('my-agent')
 
 $result = $session->result();
 echo $result->finalMessage;
+```
+
+### Using Different Providers Per Session
+
+```php
+// Claude via Anthropic (direct)
+Mbc::session('designer')
+    ->config(model: 'claude-sonnet-4-5-20250929')
+    ->start('...');
+
+// GPT-4o via OpenAI
+Mbc::session('copywriter')
+    ->config(model: 'gpt-4o')
+    ->start('...');
+
+// Any model via OpenRouter
+Mbc::session('analyst')
+    ->config(model: 'anthropic/claude-sonnet-4')
+    ->start('...');
+
+// Gemini via OpenRouter
+Mbc::session('researcher')
+    ->config(model: 'google/gemini-2.5-pro')
+    ->start('...');
 ```
 
 ## Creating Tools

@@ -29,4 +29,21 @@ final readonly class ToolResult
             'is_error' => $this->isError,
         ];
     }
+
+    /**
+     * Convert to OpenAI-compatible tool message format.
+     * Works with OpenAI, OpenRouter, and other OpenAI-compatible APIs.
+     */
+    public function toOpenAiFormat(): array
+    {
+        $content = is_string($this->content)
+            ? $this->content
+            : json_encode($this->content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        return [
+            'role' => 'tool',
+            'tool_call_id' => $this->toolUseId,
+            'content' => $content,
+        ];
+    }
 }

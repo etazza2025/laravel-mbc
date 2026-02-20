@@ -32,6 +32,31 @@ return [
                 'sleep' => 1000,
             ],
         ],
+
+        'openai' => [
+            'api_key' => env('OPENAI_API_KEY'),
+            'base_url' => 'https://api.openai.com/v1',
+            'default_model' => 'gpt-4o',
+            'timeout' => 120,
+            'retry' => [
+                'times' => 3,
+                'sleep' => 1000,
+            ],
+        ],
+
+        'openrouter' => [
+            'api_key' => env('OPENROUTER_API_KEY'),
+            'base_url' => 'https://openrouter.ai/api/v1',
+            'default_model' => 'anthropic/claude-sonnet-4',
+            'timeout' => 120,
+            'retry' => [
+                'times' => 3,
+                'sleep' => 1000,
+            ],
+            // Optional: improves rate limits on OpenRouter
+            'site_url' => env('APP_URL'),
+            'site_name' => env('APP_NAME'),
+        ],
     ],
 
     /*

@@ -12,6 +12,7 @@ use Undergrace\Mbc\Contracts\MbcProviderInterface;
 use Undergrace\Mbc\Core\MbcSession;
 use Undergrace\Mbc\Providers\AnthropicProvider;
 use Undergrace\Mbc\Providers\OpenAIProvider;
+use Undergrace\Mbc\Providers\OpenRouterProvider;
 
 class MbcServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,7 @@ class MbcServiceProvider extends ServiceProvider
             return match ($provider) {
                 'anthropic' => new AnthropicProvider(),
                 'openai' => new OpenAIProvider(),
+                'openrouter' => new OpenRouterProvider(),
                 default => throw new \InvalidArgumentException("Unknown MBC provider: [{$provider}]."),
             };
         });

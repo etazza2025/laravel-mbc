@@ -23,4 +23,20 @@ final readonly class ToolDefinition
             'input_schema' => $this->inputSchema,
         ];
     }
+
+    /**
+     * Convert to OpenAI-compatible tool definition format.
+     * Works with OpenAI, OpenRouter, and other OpenAI-compatible APIs.
+     */
+    public function toOpenAiFormat(): array
+    {
+        return [
+            'type' => 'function',
+            'function' => [
+                'name' => $this->name,
+                'description' => $this->description,
+                'parameters' => $this->inputSchema,
+            ],
+        ];
+    }
 }
