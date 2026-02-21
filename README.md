@@ -4,6 +4,8 @@
 
 MBC allows your Laravel backend to orchestrate AI agents as autonomous workers with tools, server-side — no desktop client needed.
 
+🎬 **[Watch Demo: 3 AI Agents Build a Website in 34s for $0.34] https://youtu.be/A_GiAqIWJxE** 
+
 ## Installation
 
 ```bash
