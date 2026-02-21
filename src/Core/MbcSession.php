@@ -374,7 +374,7 @@ class MbcSession
         $this->toolkit->register($this->toolClasses);
 
         // Build the agent
-        $this->agent = new MbcAgent($this->toolkit);
+        $this->agent = new MbcAgent($this->toolkit, sessionUuid: $this->uuid);
 
         // Resolve middleware instances
         $globalMiddleware = config('mbc.middleware', []);

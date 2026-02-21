@@ -390,6 +390,116 @@ php artisan mbc:replay {uuid}
 php artisan mbc:cleanup [--timeout=60] [--prune]
 ```
 
+## Real-time Broadcasting (WebSockets)
+
+MBC broadcasts all agent events via Laravel's broadcasting system. Works with Reverb, Pusher, Ably, or any supported driver.
+
+Enable in `.env`:
+
+```env
+MBC_BROADCASTING_ENABLED=true
+```
+
+### Listening to a specific agent
+
+```js
+Echo.channel('mbc.sessions.' + uuid)
+    .listen('MbcSessionStarted', (e) => {
+        console.log('Agent started:', e.session_name);
+    })
+    .listen('MbcTurnCompleted', (e) => {
+        console.log('Turn', e.turn_number, '- Stop:', e.stop_reason);
+    })
+    .listen('MbcToolExecuted', (e) => {
+        console.log('Tool:', e.tool_name, '- Duration:', e.duration_ms + 'ms');
+    })
+    .listen('MbcSessionCompleted', (e) => {
+        console.log('Done! Cost: $' + e.estimated_cost_usd);
+    })
+    .listen('MbcSessionFailed', (e) => {
+        console.error('Failed:', e.error);
+    });
+```
+
+### Monitoring all agents (dashboard)
+
+```js
+Echo.channel('mbc.monitor')
+    .listen('MbcSessionStarted', (e) => {
+        // New agent started working
+    })
+    .listen('MbcSessionCompleted', (e) => {
+        // Agent finished
+    });
+```
+
+### Events broadcast data
+
+| Event | Data |
+|---|---|
+| `MbcSessionStarted` | session_uuid, session_name, timestamp |
+| `MbcTurnCompleted` | session_uuid, turn_number, type, stop_reason, timestamp |
+| `MbcToolExecuted` | session_uuid, tool_name, tool_input, is_error, duration_ms, timestamp |
+| `MbcSessionCompleted` | session_uuid, status, final_message, total_turns, total_tokens, estimated_cost_usd, timestamp |
+| `MbcSessionFailed` | session_uuid, error, timestamp |
+
+Configure the channel prefix in `config/mbc.php`:
+
+```php
+'broadcasting' => [
+    'enabled' => env('MBC_BROADCASTING_ENABLED', false),
+    'channel_prefix' => 'mbc',
+],
+```
+
+## REST API
+
+Read-only API endpoints for querying sessions, turns, and stats. Enable in `.env`:
+
+```env
+MBC_API_ENABLED=true
+```
+
+### Endpoints
+
+| Method | URI | Description |
+|---|---|---|
+| GET | `/mbc/sessions` | List sessions (filters: status, from, to, name, model) |
+| GET | `/mbc/sessions/{uuid}` | Session detail with turns |
+| GET | `/mbc/sessions/{uuid}/turns` | Paginated turn timeline |
+| GET | `/mbc/stats` | Aggregate stats (costs, tokens, counts) |
+| GET | `/mbc/agents/active` | Currently running/pending sessions |
+
+### Configuration
+
+```php
+// config/mbc.php
+'api' => [
+    'enabled' => env('MBC_API_ENABLED', false),
+    'prefix' => 'mbc',
+    'middleware' => ['api'],  // Add 'auth:sanctum' for auth
+],
+```
+
+### Example requests
+
+```bash
+# List running sessions
+curl /mbc/sessions?status=running
+
+# Get session detail with turns
+curl /mbc/sessions/550e8400-e29b-41d4-a716-446655440000
+
+# Get turns timeline
+curl /mbc/sessions/550e8400.../turns?per_page=20
+
+# Get aggregate stats for a date range
+curl /mbc/stats?from=2026-02-01&to=2026-02-28
+
+# Get active agents
+curl /mbc/agents/active
+```
+
 ## Logging
 
 MBC auto-registers its own log channel. Logs are written to `storage/logs/mbc.log`:

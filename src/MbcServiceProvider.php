@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Undergrace\Mbc;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Undergrace\Mbc\Console\Commands\CleanupZombieSessionsCommand;
 use Undergrace\Mbc\Console\Commands\MakeMbcToolCommand;
@@ -59,6 +60,8 @@ class MbcServiceProvider extends ServiceProvider
         }
 
         $this->registerMigrations();
+        $this->registerRoutes();
+        $this->registerBroadcastChannels();
     }
 
     private function registerPublishing(): void
@@ -89,6 +92,29 @@ class MbcServiceProvider extends ServiceProvider
     private function registerMigrations(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+    }
+
+    private function registerRoutes(): void
+    {
+        if (! config('mbc.api.enabled', false)) {
+            return;
+        }
+
+        Route::group([
+            'prefix' => config('mbc.api.prefix', 'mbc'),
+            'middleware' => config('mbc.api.middleware', ['api']),
+        ], function () {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+        });
+    }
+
+    private function registerBroadcastChannels(): void
+    {
+        if (! config('mbc.broadcasting.enabled', false)) {
+            return;
+        }
+
+        $this->loadRoutesFrom(__DIR__ . '/../routes/channels.php');
     }
 
     private function registerCommands(): void

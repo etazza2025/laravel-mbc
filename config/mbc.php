@@ -122,4 +122,36 @@ return [
         'log_responses' => env('MBC_LOG_RESPONSES', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Broadcasting (WebSockets / Real-time)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, all MBC events (session started, turn completed, tool
+    | executed, etc.) are broadcast via Laravel's broadcasting system.
+    | Works with Reverb, Pusher, Ably, or any supported driver.
+    |
+    */
+
+    'broadcasting' => [
+        'enabled' => env('MBC_BROADCASTING_ENABLED', false),
+        'channel_prefix' => 'mbc',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | REST API Endpoints
+    |--------------------------------------------------------------------------
+    |
+    | Enable read-only API endpoints for monitoring sessions, turns,
+    | and costs. Configure middleware for authentication as needed.
+    |
+    */
+
+    'api' => [
+        'enabled' => env('MBC_API_ENABLED', false),
+        'prefix' => 'mbc',
+        'middleware' => ['api'],
+    ],
+
 ];

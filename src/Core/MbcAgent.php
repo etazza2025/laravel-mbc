@@ -12,6 +12,7 @@ class MbcAgent
 {
     public function __construct(
         private readonly MbcToolkit $toolkit,
+        private readonly string $sessionUuid = '',
         private readonly bool $parallel = true,
     ) {}
 
@@ -146,7 +147,7 @@ class MbcAgent
                 );
             }
 
-            event(new MbcToolExecuted($pipe['toolCall'], $result, $durationMs));
+            event(new MbcToolExecuted($this->sessionUuid, $pipe['toolCall'], $result, $durationMs));
             $results[$index] = $result;
         }
 
@@ -185,7 +186,7 @@ class MbcAgent
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
 
         if ($emitEvent) {
-            event(new MbcToolExecuted($toolCall, $result, $durationMs));
+            event(new MbcToolExecuted($this->sessionUuid, $toolCall, $result, $durationMs));
         }
 
         return $result;
