@@ -20,8 +20,12 @@ class AnthropicProvider implements MbcProviderInterface
 
     public function __construct()
     {
-        $this->apiKey = config('mbc.providers.anthropic.api_key');
+        $this->apiKey = config('mbc.providers.anthropic.api_key', '');
         $this->baseUrl = config('mbc.providers.anthropic.base_url', 'https://api.anthropic.com/v1');
+
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('MBC: ANTHROPIC_API_KEY is not configured. Set it in your .env file.');
+        }
     }
 
     public function complete(

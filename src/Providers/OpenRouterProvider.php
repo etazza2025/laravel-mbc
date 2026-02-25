@@ -30,10 +30,14 @@ class OpenRouterProvider implements MbcProviderInterface
 
     public function __construct()
     {
-        $this->apiKey = config('mbc.providers.openrouter.api_key');
+        $this->apiKey = config('mbc.providers.openrouter.api_key', '');
         $this->baseUrl = config('mbc.providers.openrouter.base_url', 'https://openrouter.ai/api/v1');
         $this->siteUrl = config('mbc.providers.openrouter.site_url');
         $this->siteName = config('mbc.providers.openrouter.site_name');
+
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('MBC: OPENROUTER_API_KEY is not configured. Set it in your .env file.');
+        }
     }
 
     public function complete(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Undergrace\Mbc\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Undergrace\Mbc\DTOs\SessionResult;
 
@@ -24,8 +24,8 @@ class MbcSessionCompleted implements ShouldBroadcast
         $prefix = config('mbc.broadcasting.channel_prefix', 'mbc');
 
         return [
-            new Channel("{$prefix}.sessions.{$this->sessionUuid}"),
-            new Channel("{$prefix}.monitor"),
+            new PrivateChannel("{$prefix}.sessions.{$this->sessionUuid}"),
+            new PrivateChannel("{$prefix}.monitor"),
         ];
     }
 

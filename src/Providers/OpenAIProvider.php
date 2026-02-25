@@ -25,8 +25,12 @@ class OpenAIProvider implements MbcProviderInterface
 
     public function __construct()
     {
-        $this->apiKey = config('mbc.providers.openai.api_key');
+        $this->apiKey = config('mbc.providers.openai.api_key', '');
         $this->baseUrl = config('mbc.providers.openai.base_url', 'https://api.openai.com/v1');
+
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('MBC: OPENAI_API_KEY is not configured. Set it in your .env file.');
+        }
     }
 
     public function complete(

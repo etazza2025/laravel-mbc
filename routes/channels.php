@@ -9,13 +9,18 @@ use Illuminate\Support\Facades\Broadcast;
 | MBC Broadcast Channels
 |--------------------------------------------------------------------------
 |
-| These channels are used for real-time broadcasting of MBC events.
-| By default, channels are public. Override authorization in your
-| application's channels.php if you need to restrict access.
+| These channels are private by default — only authenticated users can
+| subscribe. Override the authorization callback in your application's
+| channels.php or via config if you need custom access control.
 |
 */
 
 $prefix = config('mbc.broadcasting.channel_prefix', 'mbc');
 
-Broadcast::channel("{$prefix}.sessions.{uuid}", fn () => true);
-Broadcast::channel("{$prefix}.monitor", fn () => true);
+Broadcast::channel("{$prefix}.sessions.{uuid}", function ($user) {
+    return $user !== null;
+});
+
+Broadcast::channel("{$prefix}.monitor", function ($user) {
+    return $user !== null;
+});

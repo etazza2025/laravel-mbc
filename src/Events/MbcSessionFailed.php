@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Undergrace\Mbc\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class MbcSessionFailed implements ShouldBroadcast
@@ -23,8 +23,8 @@ class MbcSessionFailed implements ShouldBroadcast
         $prefix = config('mbc.broadcasting.channel_prefix', 'mbc');
 
         return [
-            new Channel("{$prefix}.sessions.{$this->sessionUuid}"),
-            new Channel("{$prefix}.monitor"),
+            new PrivateChannel("{$prefix}.sessions.{$this->sessionUuid}"),
+            new PrivateChannel("{$prefix}.monitor"),
         ];
     }
 
@@ -32,7 +32,7 @@ class MbcSessionFailed implements ShouldBroadcast
     {
         return [
             'session_uuid' => $this->sessionUuid,
-            'error' => $this->error,
+            'error' => 'Session failed. Check application logs for details.',
             'timestamp' => now()->toIso8601String(),
         ];
     }

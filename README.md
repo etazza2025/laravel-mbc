@@ -404,8 +404,10 @@ MBC_BROADCASTING_ENABLED=true
 
 ### Listening to a specific agent
 
+Channels are private — only authenticated users can subscribe:
+
 ```js
-Echo.channel('mbc.sessions.' + uuid)
+Echo.private('mbc.sessions.' + uuid)
     .listen('MbcSessionStarted', (e) => {
         console.log('Agent started:', e.session_name);
     })
@@ -419,14 +421,14 @@ Echo.channel('mbc.sessions.' + uuid)
         console.log('Done! Cost: $' + e.estimated_cost_usd);
     })
     .listen('MbcSessionFailed', (e) => {
-        console.error('Failed:', e.error);
+        console.error('Session failed');
     });
 ```
 
 ### Monitoring all agents (dashboard)
 
 ```js
-Echo.channel('mbc.monitor')
+Echo.private('mbc.monitor')
     .listen('MbcSessionStarted', (e) => {
         // New agent started working
     })
@@ -441,9 +443,9 @@ Echo.channel('mbc.monitor')
 |---|---|
 | `MbcSessionStarted` | session_uuid, session_name, timestamp |
 | `MbcTurnCompleted` | session_uuid, turn_number, type, stop_reason, timestamp |
-| `MbcToolExecuted` | session_uuid, tool_name, tool_input, is_error, duration_ms, timestamp |
+| `MbcToolExecuted` | session_uuid, tool_name, is_error, duration_ms, timestamp |
 | `MbcSessionCompleted` | session_uuid, status, final_message, total_turns, total_tokens, estimated_cost_usd, timestamp |
-| `MbcSessionFailed` | session_uuid, error, timestamp |
+| `MbcSessionFailed` | session_uuid, timestamp |
 
 Configure the channel prefix in `config/mbc.php`:
 
@@ -474,12 +476,14 @@ MBC_API_ENABLED=true
 
 ### Configuration
 
+API endpoints are protected with `auth:sanctum` and rate limited (60 req/min) by default:
+
 ```php
 // config/mbc.php
 'api' => [
     'enabled' => env('MBC_API_ENABLED', false),
     'prefix' => 'mbc',
-    'middleware' => ['api'],  // Add 'auth:sanctum' for auth
+    'middleware' => ['api', 'auth:sanctum', 'throttle:60,1'],
 ],
 ```
 
@@ -514,6 +518,21 @@ MBC auto-registers its own log channel. Logs are written to `storage/logs/mbc.lo
     'log_responses' => env('MBC_LOG_RESPONSES', false),
 ],
 ```
+
+## Security
+
+MBC includes several security measures:
+
+- **Authenticated API** — All REST endpoints require `auth:sanctum` with rate limiting (60 req/min)
+- **Private broadcast channels** — WebSocket channels require authenticated users
+- **Sanitized error messages** — Internal errors are logged but not exposed to AI responses or broadcasts
+- **API key validation** — Providers throw early if API keys are missing, preventing silent failures
+- **Safe serialization** — Inter-process communication uses JSON instead of PHP `serialize/unserialize`
+- **Filtered API responses** — Sensitive fields (`system_prompt`, `context`, raw `error`) are excluded from REST responses
+
+### Reporting Vulnerabilities
+
+If you discover a security vulnerability, please report it via GitHub Issues.
 
 ## License
 

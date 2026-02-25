@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Undergrace\Mbc\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Undergrace\Mbc\DTOs\ToolCall;
 use Undergrace\Mbc\DTOs\ToolResult;
@@ -27,8 +27,8 @@ class MbcToolExecuted implements ShouldBroadcast
         $prefix = config('mbc.broadcasting.channel_prefix', 'mbc');
 
         return [
-            new Channel("{$prefix}.sessions.{$this->sessionUuid}"),
-            new Channel("{$prefix}.monitor"),
+            new PrivateChannel("{$prefix}.sessions.{$this->sessionUuid}"),
+            new PrivateChannel("{$prefix}.monitor"),
         ];
     }
 
@@ -37,7 +37,6 @@ class MbcToolExecuted implements ShouldBroadcast
         return [
             'session_uuid' => $this->sessionUuid,
             'tool_name' => $this->toolCall->name,
-            'tool_input' => $this->toolCall->input,
             'is_error' => $this->toolResult->isError,
             'duration_ms' => $this->durationMs,
             'timestamp' => now()->toIso8601String(),

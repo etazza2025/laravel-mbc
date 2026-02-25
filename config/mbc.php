@@ -151,7 +151,7 @@ return [
     'api' => [
         'enabled' => env('MBC_API_ENABLED', false),
         'prefix' => 'mbc',
-        'middleware' => ['api'],
+        'middleware' => ['api', 'auth:sanctum', 'throttle:60,1'],
     ],
 
 ];

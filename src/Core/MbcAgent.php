@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Undergrace\Mbc\Core;
 
+use Illuminate\Support\Facades\Log;
 use Undergrace\Mbc\DTOs\ToolCall;
 use Undergrace\Mbc\DTOs\ToolResult;
 use Undergrace\Mbc\Events\MbcToolExecuted;
@@ -104,15 +105,17 @@ class MbcAgent
             }
 
             if ($pid === 0) {
-                // Child process
+                // Child process — use JSON instead of serialize for safety
                 fclose($socketPair[0]);
                 $result = $this->executeSingle($toolCall, emitEvent: false);
-                $serialized = serialize([
+                $encoded = json_encode([
                     'index' => $index,
-                    'result' => $result,
-                    'duration_ms' => 0,
-                ]);
-                fwrite($socketPair[1], $serialized);
+                    'toolUseId' => $result->toolUseId,
+                    'toolName' => $result->toolName,
+                    'content' => $result->content,
+                    'isError' => $result->isError,
+                ], JSON_THROW_ON_ERROR);
+                fwrite($socketPair[1], $encoded);
                 fclose($socketPair[1]);
                 exit(0);
             }
@@ -136,8 +139,13 @@ class MbcAgent
             $durationMs = (int) ((microtime(true) - $pipe['startTime']) * 1000);
 
             if ($data !== false && $data !== '') {
-                $decoded = unserialize($data);
-                $result = $decoded['result'];
+                $decoded = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+                $result = new ToolResult(
+                    toolUseId: $decoded['toolUseId'],
+                    toolName: $decoded['toolName'],
+                    content: $decoded['content'],
+                    isError: $decoded['isError'],
+                );
             } else {
                 $result = new ToolResult(
                     toolUseId: $pipe['toolCall']->id,
@@ -175,10 +183,17 @@ class MbcAgent
                 isError: false,
             );
         } catch (\Throwable $e) {
+            Log::channel(config('mbc.logging.channel', 'mbc'))->error('MBC Tool execution failed', [
+                'tool' => $toolCall->name,
+                'session_uuid' => $this->sessionUuid,
+                'exception' => $e->getMessage(),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ]);
+
             $result = new ToolResult(
                 toolUseId: $toolCall->id,
                 toolName: $toolCall->name,
-                content: "Error executing tool '{$toolCall->name}': {$e->getMessage()}",
+                content: "Tool '{$toolCall->name}' execution failed. Check logs for details.",
                 isError: true,
             );
         }
